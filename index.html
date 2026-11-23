@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Трекер</title>
+<meta name="theme-color" content="#f6f5f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Трекер">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{
+  --bg:#f6f5f1;--card:#fff;--ink:#1b1a18;--muted:#8b877e;--line:#e6e2d9;
+  --accent:#1e6b57;--accent-soft:#e6f0ea;--danger:#b3261e;--chip:#f0eee7;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  -webkit-text-size-adjust:100%;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none;
+  padding-top:env(safe-area-inset-top);
+  padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,textarea,select{-webkit-user-select:text;user-select:text}
+header{padding:10px 16px 6px}
+.top{display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.build{color:#bfbaad;letter-spacing:.02em}
+.icon{font-size:22px;line-height:1;width:40px;height:40px;border-radius:12px;color:var(--muted)}
+.icon:active{background:var(--chip)}
+.daynav{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.nav{font-size:26px;line-height:1;width:44px;height:44px;color:var(--muted);border-radius:12px}
+.nav:active{background:var(--chip)}
+.nav:disabled{opacity:.25}
+.daybox{text-align:center;flex:1}
+#dayLabel{font-size:17px;font-weight:600}
+.total{font-size:13px;color:var(--muted);margin-top:1px;font-variant-numeric:tabular-nums}
+.running{
+  margin:8px 16px 0;padding:10px 12px;border-radius:14px;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.rleft{display:flex;align-items:center;gap:8px;min-width:0}
+.rleft span#runName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.rdot{width:9px;height:9px;border-radius:50%;background:#9fe0c6;flex:0 0 auto;animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.35}}
+.rright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.rtime{font-variant-numeric:tabular-nums;font-size:15px;opacity:.9}
+.stop{background:rgba(255,255,255,.18);padding:7px 12px;border-radius:10px;font-size:14px;font-weight:600}
+main{padding:12px 16px calc(28px + env(safe-area-inset-bottom))}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:start}
+.gbox{
+  background:#fff;border:1px solid var(--cb,#e6e2d9);border-radius:16px;padding:9px;
+  display:flex;flex-direction:column;gap:8px;min-width:0;
+}
+.ghead{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--c,#7d796f);min-width:0}
+.ghead span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ghead i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.ghead2{font-size:12px;font-weight:500;color:#7d796f;padding:10px 2px 2px}
+.gcards{display:flex;flex-direction:column;gap:6px}
+.card{
+  background:var(--bg);border:0;border-radius:12px;padding:9px;
+  display:flex;flex-direction:column;
+}
+.card:active{transform:scale(.985)}
+.card.on{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.cname{font-size:15px;font-weight:600;line-height:1.2}
+.chips{display:flex;gap:6px;justify-content:flex-end;margin-top:auto;padding-top:8px}
+.chip{
+  background:var(--chip);color:#55514a;border-radius:10px;font-size:13px;font-weight:600;
+  min-width:44px;height:34px;padding:0 8px;
+}
+.chip:active{background:#e4e0d6}
+.card.on .chip{background:rgba(255,255,255,.7)}
+.addtask{
+  width:100%;margin-top:10px;padding:13px;border:1px dashed #cfcabd;border-radius:14px;
+  color:var(--muted);font-size:15px;background:transparent;
+}
+.block{margin-bottom:18px}
+.blockhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.section-title{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.more{font-size:13px;color:var(--accent)}
+.entries{display:flex;flex-direction:column}
+.entry{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);
+}
+.etime{font-size:13px;color:var(--muted);width:42px;flex:0 0 auto;font-variant-numeric:tabular-nums;padding-top:2px}
+.ebody{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ename{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.enote{font-size:12px;color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.emin{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;padding-top:2px}
+.empty{color:var(--muted);font-size:14px;padding:14px 0}
+.chart .bar{display:flex;gap:2px;height:14px;border-radius:7px;overflow:hidden;background:var(--chip);margin:2px 0 8px}
+.chart .bar i{display:block;min-width:4px}
+.lrow{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.lrow i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.ln{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv{font-variant-numeric:tabular-nums}
+.lp{color:var(--muted);width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.rlabel{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:6px;margin:2px 0 10px}
+.tabs button{flex:1;padding:9px 0;border-radius:10px;background:var(--chip);font-size:14px;color:#55514a}
+.tabs button.on{background:var(--accent);color:#fff}
+.rangebox{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rangebox input{flex:1;min-width:0;font:inherit;font-size:15px;padding:9px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.rangebox .dash{color:var(--muted)}
+.csum{font-size:15px;color:var(--ink);margin:0 0 10px}
+.csum b{font-weight:600}
+.csum span{color:var(--muted);font-size:14px}
+.ego{color:#c0bbaf;font-size:17px;line-height:1;flex:0 0 auto}
+.overlay{
+  position:fixed;inset:0;background:rgba(20,18,15,.32);display:flex;align-items:flex-end;
+  z-index:20;padding:0;
+}
+.sheet{
+  background:var(--bg);width:100%;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));
+  max-height:88vh;overflow:auto;-webkit-overflow-scrolling:touch;
+}
+.sheet h3{margin:0 0 4px;font-size:17px}
+.sheet .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.field input{
+  width:100%;font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+}
+.row{display:flex;gap:8px;align-items:center}
+.row input{flex:1;min-width:0}
+.btn{
+  background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:600;
+}
+.btn.ghost{background:var(--chip);color:var(--ink);font-weight:500}
+.btn.danger{background:#f7e7e5;color:var(--danger);font-weight:500}
+.btn.wide{width:100%;text-align:center}
+.stepper{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0 14px}
+.stepper button{width:48px;height:48px;border-radius:14px;background:var(--chip);font-size:22px}
+.stepper input{
+  width:92px;text-align:center;font-size:26px;font-weight:600;padding:8px;border-radius:12px;
+  border:1px solid var(--line);background:#fff;font-variant-numeric:tabular-nums;
+}
+.pickwrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.pickwrap button{background:var(--chip);border-radius:12px;padding:14px 0;font-size:16px;font-weight:600}
+.manage{display:flex;flex-direction:column;gap:2px;margin-bottom:14px}
+.mrow{display:flex;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.mrow .t{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .c{font-size:12px;color:var(--muted);flex:0 0 auto}
+.mrow .x{color:var(--muted);font-size:20px;width:34px;height:34px;border-radius:10px;flex:0 0 auto}
+.mrow .x:active{background:var(--chip)}
+select{
+  font:inherit;font-size:15px;padding:10px;border-radius:12px;border:1px solid var(--line);background:#fff;
+  color:var(--ink);max-width:100%;
+}
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:#1b1a18;color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;z-index:30;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.toast.on{opacity:1}
+.warn{background:#fbe9e7;color:#8a2b22;border:1px solid #f0c9c3;border-radius:12px;padding:9px 12px;margin:8px 16px 0;font-size:13px;line-height:1.35}
+</style>
+</head>
+<body>
+
+<div class="warn" id="warn" hidden>Браузер не сохраняет данные: записи пропадут после перезагрузки. Похоже, открыто приватное окно или запрещены cookie.</div>
+
+<header>
+  <div class="top">
+    <div class="brand">Трекер<span class="build" id="buildTag"></span></div>
+    <button class="icon" id="btnMenu" aria-label="Настройки">⋯</button>
+  </div>
+  <div class="daynav">
+    <button class="nav" id="prevDay" aria-label="Предыдущий день">‹</button>
+    <div class="daybox">
+      <div id="dayLabel"></div>
+      <div class="total" id="dayTotal"></div>
+    </div>
+    <button class="nav" id="nextDay" aria-label="Следующий день">›</button>
+  </div>
+</header>
+
+<div class="running" id="running" hidden>
+  <div class="rleft"><span class="rdot"></span><span id="runName"></span></div>
+  <div class="rright"><span class="rtime" id="runTime">00:00</span><button class="stop" id="btnStop">Стоп</button></div>
+</div>
+
+<main>
+  <div class="block">
+    <div class="blockhead"><span class="section-title">Задачи</span></div>
+    <div class="grid" id="grid"></div>
+    <button class="addtask" id="btnAddTask">+ задача</button>
+  </div>
+  <div class="block">
+    <div class="blockhead">
+      <span class="section-title">Записи</span>
+      <button class="more" id="more" hidden></button>
+    </div>
+    <div class="entries" id="entries"></div>
+  </div>
+  <div class="block">
+    <div class="blockhead">
+      <span class="section-title">По категориям</span>
+      <span class="rlabel" id="rangeLabel"></span>
+    </div>
+    <div class="tabs" id="rangeTabs">
+      <button data-range="day" class="on">День</button>
+      <button data-range="week">7 дней</button>
+      <button data-range="period">Период</button>
+    </div>
+    <div class="rangebox" id="rangeBox" hidden>
+      <input type="date" id="fromDate">
+      <span class="dash">–</span>
+      <input type="date" id="toDate">
+    </div>
+    <div class="chart" id="chart"></div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay" hidden><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var KEY='tracker.v1';
+var BUILD='v15';
+var PALETTE=['#2f6f57','#8a5a2b','#3d5a80','#7a4b73','#5c6b3a','#7d5a50','#4a6b6b'];
+
+var DEFAULTS={
+  cats:[
+    {id:'c1',name:'Суды и процесс'},
+    {id:'c2',name:'Договоры'},
+    {id:'c3',name:'Правовой анализ'},
+    {id:'c4',name:'Клиенты и переписка'},
+    {id:'c5',name:'Административное'},
+    {id:'c6',name:'Обучение и Harness'}
+  ],
+  tasks:[
+    {id:'t1',name:'Разбор судебной практики',cat:'c3'},
+    {id:'t2',name:'Процессуальный документ',cat:'c1'},
+    {id:'t3',name:'Правка договора',cat:'c2'},
+    {id:'t4',name:'Консультация',cat:'c4'},
+    {id:'t5',name:'Переписка по делу',cat:'c4'},
+    {id:'t6',name:'Проверка норм и ссылок',cat:'c3'},
+    {id:'t7',name:'Разбор входящих',cat:'c5'},
+    {id:'t8',name:'Настройка Harness',cat:'c6'}
+  ],
+  entries:[],
+  running:null,
+  sort:'count'
+};
+
+function $(s,r){return (r||document).querySelector(s);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function pad(n){return String(n).padStart(2,'0');}
+function dayKey(ts){var d=new Date(ts);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function hhmm(ts){var d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function dur(m){m=Math.round(m);if(m<60)return m+' мин';var h=Math.floor(m/60),r=m%60;return h+' ч'+(r?' '+r+' мин':'');}
+function timerText(ms){var s=Math.max(0,Math.floor(ms/1000));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+pad(m):pad(m))+':'+pad(x);}
+
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){
+      var d=JSON.parse(raw);
+      if(d&&Array.isArray(d.tasks)&&Array.isArray(d.cats)&&Array.isArray(d.entries)){
+        d.running=d.running||null;
+        d.sort=d.sort==='manual'?'manual':'count';
+        return d;
+      }
+    }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+var S=load();
+var view=dayKey(Date.now());
+var range={mode:'day',from:'',to:''};
+var expanded=false;
+var storeState='';
+var seq=Date.now();
+function stamp(){seq=Math.max(Date.now(),seq+1);return seq;}
+
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(S));}
+  catch(e){toast('Не удалось сохранить');var w=$('#warn');if(w)w.hidden=false;}
+}
+function catOf(id){for(var i=0;i<S.cats.length;i++)if(S.cats[i].id===id)return S.cats[i];return null;}
+function taskOf(id){for(var i=0;i<S.tasks.length;i++)if(S.tasks[i].id===id)return S.tasks[i];return null;}
+function colorOf(id){var i=0;for(var k=0;k<S.cats.length;k++){if(S.cats[k].id===id){i=k;break;}}return PALETTE[i%PALETTE.length];}
+function tint(hex,a){
+  var h=String(hex).replace('#','');
+  if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+function labelFor(dk){
+  var parts=dk.split('-');
+  var d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  var today=dayKey(Date.now());
+  if(dk===today)return 'Сегодня, '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  var y=new Date(Date.now());y.setDate(y.getDate()-1);
+  if(dk===dayKey(y.getTime()))return 'Вчера, '+d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',weekday:'short'});
+}
+
+function toast(msg){
+  var t=$('#toast');t.textContent=msg;t.classList.add('on');
+  clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('on');},1400);
+}
+
+function render(){
+  var list=S.entries.filter(function(e){return e.day===view;}).sort(function(a,b){return (b.created||b.ts)-(a.created||a.ts);});
+  var total=list.reduce(function(s,e){return s+e.min;},0);
+  $('#dayLabel').textContent=labelFor(view);
+  $('#dayTotal').textContent=total?dur(total):'0 мин';
+  $('#nextDay').disabled=(view>=dayKey(Date.now()));
+  renderTasks();
+  renderEntries(list);
+  renderChart();
+  renderRunning();
+}
+
+function groupsOfTasks(){
+  var out=[];
+  S.cats.forEach(function(c){
+    var list=S.tasks.filter(function(t){return t.cat===c.id;});
+    if(list.length)out.push({cat:c,tasks:list});
+  });
+  if(S.sort!=='manual'){
+    out.sort(function(a,b){
+      if(b.tasks.length!==a.tasks.length)return b.tasks.length-a.tasks.length;
+      return a.cat.name.localeCompare(b.cat.name,'ru');
+    });
+  }
+  var none=S.tasks.filter(function(t){return !catOf(t.cat);});
+  if(none.length)out.push({cat:null,tasks:none});
+  return out;
+}
+
+function renderTasks(){
+  var g=$('#grid');g.innerHTML='';
+  if(!S.tasks.length){
+    g.innerHTML='<div class="empty" style="grid-column:1/-1">Задач пока нет. Добавь первую.</div>';
+    return;
+  }
+  groupsOfTasks().forEach(function(gr){
+    var col=gr.cat?colorOf(gr.cat.id):'#b8b3a7';
+    var box=document.createElement('section');
+    box.className='gbox';
+    box.style.setProperty('--c',col);
+    box.style.setProperty('--cb',tint(col,0.4));
+    var head=document.createElement('div');
+    head.className='ghead';
+    head.innerHTML='<i style="background:'+col+'"></i><span>'+esc(gr.cat?gr.cat.name:'Без категории')+'</span>';
+    box.appendChild(head);
+    var list=document.createElement('div');
+    list.className='gcards';
+    gr.tasks.forEach(function(t){
+      var card=document.createElement('div');
+      card.className='card'+(S.running&&S.running.task===t.id?' on':'');
+      card.innerHTML='<div class="cname">'+esc(t.name)+'</div>'+
+        '<div class="chips"><button class="chip" data-add="5">+5</button><button class="chip" data-add="10">+10</button></div>';
+      card.addEventListener('click',function(ev){
+        var chip=ev.target.closest('.chip');
+        if(chip){quickAdd(t,+chip.getAttribute('data-add'));return;}
+        tapTask(t);
+      });
+      list.appendChild(card);
+    });
+    box.appendChild(list);
+    g.appendChild(box);
+  });
+}
+
+function renderEntries(list){
+  var box=$('#entries');box.innerHTML='';
+  var more=$('#more');
+  if(!list.length){
+    box.innerHTML='<div class="empty">За этот день записей нет.</div>';
+    more.hidden=true;
+    return;
+  }
+  var shown=expanded?list:list.slice(0,4);
+  shown.forEach(function(e){
+    var t=taskOf(e.task);
+    var row=document.createElement('div');
+    row.className='entry';
+    row.innerHTML='<span class="etime">'+hhmm(e.ts)+'</span>'+
+      '<span class="ebody"><span class="ename">'+esc(t?t.name:'удалённая задача')+'</span>'+
+      (e.note?'<span class="enote">'+esc(e.note)+'</span>':'')+'</span>'+
+      '<span class="emin">'+dur(e.min)+'</span>'+
+      '<span class="ego">›</span>';
+    row.addEventListener('click',function(){openEntry(e.id);});
+    box.appendChild(row);
+  });
+  if(list.length>4){
+    more.hidden=false;
+    more.textContent=expanded?'свернуть':'ещё '+(list.length-4);
+  }else{
+    more.hidden=true;
+  }
+}
+
+function dLabel(dk){
+  var p=dk.split('-');
+  var d=new Date(+p[0],+p[1]-1,+p[2]);
+  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+}
+
+function plural(n,a,b,c){
+  var n10=n%10,n100=n%100;
+  if(n10===1&&n100!==11)return a;
+  if(n10>=2&&n10<=4&&(n100<10||n100>=20))return b;
+  return c;
+}
+
+function rangeBounds(){
+  if(range.mode==='week'){
+    var d=new Date();d.setDate(d.getDate()-6);
+    return {from:dayKey(d.getTime()),to:dayKey(Date.now())};
+  }
+  if(range.mode==='period'){
+    var f=range.from||dayKey(Date.now()),t=range.to||f;
+    if(f>t){var x=f;f=t;t=x;}
+    return {from:f,to:t};
+  }
+  return {from:view,to:view};
+}
+
+function setRange(mode){
+  range.mode=mode;
+  var btns=$('#rangeTabs').querySelectorAll('button');
+  for(var i=0;i<btns.length;i++){
+    if(btns[i].getAttribute('data-range')===mode)btns[i].classList.add('on');
+    else btns[i].classList.remove('on');
+  }
+  if(mode==='period'&&!range.from){
+    var d=new Date();d.setDate(1);
+    range.from=dayKey(d.getTime());
+    range.to=dayKey(Date.now());
+  }
+  $('#rangeBox').hidden=(mode!=='period');
+  if(mode==='period'){
+    $('#fromDate').value=range.from;
+    $('#toDate').value=range.to;
+  }
+  renderChart();
+}
+
+function renderChart(){
+  var box=$('#chart');
+  var b=rangeBounds();
+  var list=S.entries.filter(function(e){return e.day>=b.from&&e.day<=b.to;});
+  var total=list.reduce(function(s,e){return s+e.min;},0);
+  $('#rangeLabel').textContent=(range.mode==='day')?'':dLabel(b.from)+' – '+dLabel(b.to);
+  if(!total){box.innerHTML='<div class="empty">Пока пусто.</div>';return;}
+  var map={};
+  list.forEach(function(e){var k=e.cat||'none';map[k]=(map[k]||0)+e.min;});
+  var rows=Object.keys(map).map(function(k){
+    var c=k==='none'?null:catOf(k);
+    return {name:c?c.name:'Без категории',color:c?colorOf(k):'#b8b3a7',min:map[k]};
+  }).sort(function(x,y){return y.min-x.min;});
+  var scope=range.mode==='day'?'за день':(range.mode==='week'?'за 7 дней':'за период');
+  box.innerHTML='<div class="csum">Всего '+scope+' <b>'+dur(total)+'</b><span> · '+list.length+' '+plural(list.length,'запись','записи','записей')+'</span></div>'+
+    '<div class="bar">'+rows.map(function(r){
+      return '<i style="flex:'+r.min+' 1 0;background:'+r.color+'"></i>';
+    }).join('')+'</div>'+
+    rows.map(function(r){
+      return '<div class="lrow"><i style="background:'+r.color+'"></i>'+
+        '<span class="ln">'+esc(r.name)+'</span>'+
+        '<span class="lv">'+dur(r.min)+'</span>'+
+        '<span class="lp">'+Math.round(r.min/total*100)+'%</span></div>';
+    }).join('');
+}
+
+function renderRunning(){
+  var bar=$('#running');
+  if(!S.running){bar.hidden=true;return;}
+  bar.hidden=false;
+  var t=taskOf(S.running.task);
+  $('#runName').textContent=t?t.name:'задача';
+  $('#runTime').textContent=timerText(Date.now()-S.running.ts);
+}
+
+function tapTask(t){
+  if(view!==dayKey(Date.now())){openPick(t);return;}
+  if(S.running&&S.running.task===t.id){stopTimer();return;}
+  if(S.running)stopTimer();
+  S.running={task:t.id,ts:Date.now()};
+  save();render();
+}
+
+function stopTimer(){
+  if(!S.running)return;
+  var r=S.running;
+  var t=taskOf(r.task);
+  var min=Math.max(1,Math.round((Date.now()-r.ts)/60000));
+  S.entries.push({id:uid(),created:stamp(),task:r.task,cat:t?t.cat:null,day:dayKey(r.ts),ts:r.ts,min:min,note:''});
+  S.running=null;
+  save();render();
+  var entry=S.entries[S.entries.length-1];
+  if(min>180){toast('вышло долго, проверь минуты');openEntry(entry.id);return;}
+  toast('записано: '+dur(min));
+}
+
+function tsForDay(dk){
+  var now=new Date();
+  if(dk===dayKey(now.getTime()))return now.getTime();
+  var p=dk.split('-');
+  return new Date(+p[0],+p[1]-1,+p[2],now.getHours(),now.getMinutes()).getTime();
+}
+
+function quickAdd(t,n){
+  if(S.running&&S.running.task===t.id&&view===dayKey(Date.now())){
+    S.running.ts-=n*60000;
+    save();render();
+    toast('+'+n+' мин к таймеру');
+    return;
+  }
+  var tsk=taskOf(t.id);
+  S.entries.push({id:uid(),created:stamp(),task:t.id,cat:tsk?tsk.cat:null,day:view,ts:tsForDay(view),min:n,note:''});
+  save();render();
+  toast('+'+n+' мин');
+}
+
+/* ---------- листы ---------- */
+
+function openSheet(html){
+  var o=$('#overlay');
+  $('#sheet').innerHTML=html;
+  o.hidden=false;
+  o.onclick=function(ev){if(ev.target===o)closeSheet();};
+  return $('#sheet');
+}
+function closeSheet(){$('#overlay').hidden=true;$('#sheet').innerHTML='';}
+
+function openPick(t){
+  var s=openSheet(
+    '<h3>'+esc(t.name)+'</h3>'+
+    '<div class="sub">Добавить запись на '+esc(labelFor(view).toLowerCase())+'</div>'+
+    '<div class="pickwrap">'+[5,10,15,20,30,45,60,90].map(function(n){
+      return '<button data-n="'+n+'">'+n+'</button>';
+    }).join('')+'</div>'+
+    '<div class="row"><input id="pickOther" type="number" inputmode="numeric" placeholder="другое число минут"><button class="btn" id="pickAdd">Добавить</button></div>'
+  );
+  s.querySelectorAll('[data-n]').forEach(function(b){
+    b.addEventListener('click',function(){var n=+b.getAttribute('data-n');closeSheet();quickAdd(t,n);});
+  });
+  s.querySelector('#pickAdd').addEventListener('click',function(){
+    var v=parseInt(s.querySelector('#pickOther').value,10);
+    if(!v||v<=0){toast('введи минуты');return;}
+    closeSheet();quickAdd(t,v);
+  });
+}
+
+function openEntry(id){
+  var e=null;
+  for(var i=0;i<S.entries.length;i++)if(S.entries[i].id===id)e=S.entries[i];
+  if(!e)return;
+  var t=taskOf(e.task);
+  var c=catOf(e.cat);
+  var s=openSheet(
+    '<h3>'+esc(t?t.name:'удалённая задача')+'</h3>'+
+    '<div class="sub">'+esc(labelFor(e.day))+' · '+hhmm(e.ts)+(c?' · '+esc(c.name):'')+'</div>'+
+    '<div class="stepper"><button data-step="-5">–</button>'+
+      '<input id="eMin" type="number" inputmode="numeric" value="'+e.min+'">'+
+      '<button data-step="5">+</button></div>'+
+    '<div class="field"><label>Заметка</label><input id="eNote" type="text" placeholder="коротко, что делал" value="'+esc(e.note)+'"></div>'+
+    '<div class="row" style="margin-bottom:8px"><button class="btn wide" id="eSave">Сохранить</button></div>'+
+    '<button class="btn danger wide" id="eDel">Удалить запись</button>'
+  );
+  var inp=s.querySelector('#eMin');
+  s.querySelectorAll('[data-step]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var v=(parseInt(inp.value,10)||0)+ +b.getAttribute('data-step');
+      inp.value=Math.max(1,v);
+    });
+  });
+  s.querySelector('#eSave').addEventListener('click',function(){
+    e.min=Math.max(1,parseInt(inp.value,10)||1);
+    e.note=s.querySelector('#eNote').value.trim();
+    save();closeSheet();render();toast('сохранено');
+  });
+  s.querySelector('#eDel').addEventListener('click',function(){
+    S.entries=S.entries.filter(function(x){return x.id!==id;});
+    save();closeSheet();render();toast('удалено');
+  });
+}
+
+function openAddTask(){
+  var opts=S.cats.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';}).join('');
+  var s=openSheet(
+    '<h3>Новая задача</h3>'+
+    '<div class="sub">Название и категория. Категория потом подставляется сама.</div>'+
+    '<div class="field"><label>Название</label><input id="ntName" type="text" placeholder="например, согласование иска"></div>'+
+    '<div class="field"><label>Категория</label><select id="ntCat">'+opts+'</select></div>'+
+    '<button class="btn wide" id="ntAdd">Добавить</button>'
+  );
+  s.querySelector('#ntAdd').addEventListener('click',function(){
+    var name=s.querySelector('#ntName').value.trim();
+    if(!name){toast('введи название');return;}
+    S.tasks.push({id:uid(),name:name,cat:s.querySelector('#ntCat').value||null});
+    save();closeSheet();render();toast('задача добавлена');
+  });
+  s.querySelector('#ntName').addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();s.querySelector('#ntAdd').click();}
+  });
+  setTimeout(function(){s.querySelector('#ntName').focus();},50);
+}
+
+function openRename(kind,id){
+  var obj=kind==='task'?taskOf(id):catOf(id);
+  if(!obj)return;
+  var hint=kind==='task'
+    ?'Записи с этой задачей обновятся сами: они ссылаются на неё, а не на текст названия.'
+    :'Записи с этой категорией обновятся сами: они ссылаются на неё, а не на текст названия.';
+  var s=openSheet(
+    '<h3>'+(kind==='task'?'Задача':'Категория')+'</h3>'+
+    '<div class="sub">'+hint+'</div>'+
+    '<div class="field"><label>Название</label><input id="rnName" type="text" value="'+esc(obj.name)+'"></div>'+
+    '<button class="btn wide" id="rnSave">Сохранить</button>'
+  );
+  var inp=s.querySelector('#rnName');
+  setTimeout(function(){inp.focus();inp.select();},60);
+  s.querySelector('#rnSave').addEventListener('click',function(){
+    var v=inp.value.trim();
+    if(!v){toast('введи название');return;}
+    obj.name=v;
+    save();closeSheet();render();openMenu();toast('сохранено');
+  });
+  inp.addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();s.querySelector('#rnSave').click();}
+  });
+}
+
+function moveCat(id,dir){
+  var i=-1;
+  for(var k=0;k<S.cats.length;k++)if(S.cats[k].id===id)i=k;
+  var j=i+dir;
+  if(i<0||j<0||j>=S.cats.length)return;
+  var tmp=S.cats[i];S.cats[i]=S.cats[j];S.cats[j]=tmp;
+  save();closeSheet();render();openMenu();
+}
+
+function openMenu(){
+  var arrows=S.sort==='manual';
+  var cats=S.cats.map(function(c){
+    return '<div class="mrow"><span class="t">'+esc(c.name)+'</span>'+
+      (arrows?'<button class="x" data-up="'+esc(c.id)+'" aria-label="выше">↑</button>'+
+              '<button class="x" data-down="'+esc(c.id)+'" aria-label="ниже">↓</button>':'')+
+      '<button class="x" data-rencat="'+esc(c.id)+'" aria-label="переименовать">✎</button>'+
+      '<button class="x" data-delcat="'+esc(c.id)+'" aria-label="удалить">×</button></div>';
+  }).join('');
+  var tasks=groupsOfTasks().map(function(gr){
+    return '<div class="ghead2">'+esc(gr.cat?gr.cat.name:'Без категории')+'</div>'+
+      gr.tasks.map(function(t){
+        return '<div class="mrow"><span class="t">'+esc(t.name)+'</span>'+
+          '<button class="x" data-rentask="'+esc(t.id)+'" aria-label="переименовать">✎</button>'+
+          '<button class="x" data-deltask="'+esc(t.id)+'" aria-label="удалить">×</button></div>';
+      }).join('');
+  }).join('');
+  var s=openSheet(
+    '<h3>Настройки</h3>'+
+    '<div class="sub">Всё хранится только на этом телефоне. Сборка '+esc(BUILD)+
+      '. Категорий: '+S.cats.length+' · задач: '+S.tasks.length+' · записей: '+S.entries.length+
+      (storeState?'. Хранилище: '+storeState:'')+'.</div>'+
+    '<div class="section-title" style="margin-top:4px">Задачи</div>'+
+    '<div class="tabs" id="sortTabs">'+
+      '<button data-sort="count"'+(S.sort==='manual'?'':' class="on"')+'>По числу задач</button>'+
+      '<button data-sort="manual"'+(S.sort==='manual'?' class="on"':'')+'>Вручную</button>'+
+    '</div>'+
+    '<div class="sub" style="margin:-4px 0 12px">'+(S.sort==='manual'?'Стрелки ↑ ↓ в категориях меняют порядок групп.':'Сверху группы, где больше задач. При равенстве по алфавиту.')+'</div>'+
+    '<div class="manage">'+(tasks||'<div class="empty">пусто</div>')+'</div>'+
+    '<div class="field" style="margin-bottom:20px">'+
+      '<label>Новая задача</label>'+
+      '<div class="row" style="margin-bottom:8px"><input id="newTask" type="text" placeholder="название"><select id="newTaskCat">'+
+        S.cats.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';}).join('')+
+      '</select></div>'+
+      '<button class="btn wide" id="addTaskBtn">Добавить задачу</button>'+
+    '</div>'+
+    '<div class="section-title">Категории</div>'+
+    '<div class="manage">'+(cats||'<div class="empty">пусто</div>')+'</div>'+
+    '<div class="field" style="margin-bottom:20px">'+
+      '<label>Новая категория</label>'+
+      '<input id="newCat" type="text" placeholder="название" style="margin-bottom:8px">'+
+      '<button class="btn wide" id="addCatBtn">Добавить категорию</button>'+
+    '</div>'+
+    '<div class="section-title">Данные</div>'+
+    '<div class="row" style="margin-bottom:8px"><button class="btn ghost" id="expCsv">Экспорт CSV</button><button class="btn ghost" id="expJson">Экспорт JSON</button></div>'+
+    '<div class="row" style="margin-bottom:8px"><button class="btn ghost wide" id="impBtn">Импорт JSON (заменит данные)</button></div>'+
+    '<input type="file" id="impFile" accept="application/json,.json" hidden>'
+  );
+  s.querySelectorAll('[data-rentask]').forEach(function(b){
+    b.addEventListener('click',function(){openRename('task',b.getAttribute('data-rentask'));});
+  });
+  s.querySelectorAll('[data-rencat]').forEach(function(b){
+    b.addEventListener('click',function(){openRename('cat',b.getAttribute('data-rencat'));});
+  });
+  s.querySelectorAll('[data-sort]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var mode=b.getAttribute('data-sort');
+      if(S.sort===mode)return;
+      S.sort=mode;save();closeSheet();render();openMenu();
+    });
+  });
+  s.querySelectorAll('[data-up]').forEach(function(b){
+    b.addEventListener('click',function(){moveCat(b.getAttribute('data-up'),-1);});
+  });
+  s.querySelectorAll('[data-down]').forEach(function(b){
+    b.addEventListener('click',function(){moveCat(b.getAttribute('data-down'),1);});
+  });
+  s.querySelectorAll('[data-deltask]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.getAttribute('data-deltask');
+      S.tasks=S.tasks.filter(function(t){return t.id!==id;});
+      if(S.running&&S.running.task===id)S.running=null;
+      save();closeSheet();render();openMenu();
+    });
+  });
+  s.querySelectorAll('[data-delcat]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.getAttribute('data-delcat');
+      S.cats=S.cats.filter(function(c){return c.id!==id;});
+      S.tasks.forEach(function(t){if(t.cat===id)t.cat=S.cats.length?S.cats[0].id:null;});
+      S.entries.forEach(function(e){if(e.cat===id)e.cat=null;});
+      save();closeSheet();render();openMenu();
+    });
+  });
+  function saveNewTask(){
+    var v=s.querySelector('#newTask').value.trim();
+    if(!v){toast('введи название');return;}
+    var cat=s.querySelector('#newTaskCat').value;
+    if(!cat){toast('сначала добавь категорию');return;}
+    S.tasks.push({id:uid(),name:v,cat:cat});
+    save();closeSheet();render();openMenu();toast('задача добавлена');
+  }
+  function saveNewCat(){
+    var v=s.querySelector('#newCat').value.trim();
+    if(!v){toast('введи название');return;}
+    S.cats.push({id:uid(),name:v});
+    save();closeSheet();render();openMenu();toast('категория добавлена');
+  }
+  s.querySelector('#addTaskBtn').addEventListener('click',saveNewTask);
+  s.querySelector('#addCatBtn').addEventListener('click',saveNewCat);
+  s.querySelector('#newTask').addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();saveNewTask();}
+  });
+  s.querySelector('#newCat').addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'){ev.preventDefault();saveNewCat();}
+  });
+  s.querySelector('#expCsv').addEventListener('click',function(){exportCsv();});
+  s.querySelector('#expJson').addEventListener('click',function(){exportJson();});
+  s.querySelector('#impBtn').addEventListener('click',function(){s.querySelector('#impFile').click();});
+  s.querySelector('#impFile').addEventListener('change',function(ev){
+    var f=ev.target.files&&ev.target.files[0];
+    if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var d=JSON.parse(String(r.result));
+        if(!d||!Array.isArray(d.tasks)||!Array.isArray(d.entries))throw new Error('bad');
+        S={cats:d.cats||[],tasks:d.tasks,entries:d.entries,running:null,sort:d.sort==='manual'?'manual':'count'};
+        save();closeSheet();render();toast('данные загружены');
+      }catch(err){toast('файл не подошёл');}
+    };
+    r.readAsText(f);
+  });
+}
+
+/* ---------- экспорт ---------- */
+
+function csvText(){
+  var rows=[['Дата','Время','Задача','Категория','Минуты','Заметка']];
+  S.entries.slice().sort(function(a,b){return a.ts-b.ts;}).forEach(function(e){
+    var t=taskOf(e.task),c=catOf(e.cat);
+    rows.push([e.day,hhmm(e.ts),t?t.name:'',c?c.name:'',String(e.min),e.note||'']);
+  });
+  return '\uFEFF'+rows.map(function(r){
+    return r.map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(';');
+  }).join('\r\n');
+}
+
+function exportCsv(){download('treker-'+dayKey(Date.now())+'.csv',csvText(),'text/csv');}
+
+function exportJson(){
+  var data={version:1,exported:new Date().toISOString(),cats:S.cats,tasks:S.tasks,entries:S.entries};
+  download('treker-'+dayKey(Date.now())+'.json',JSON.stringify(data,null,2),'application/json');
+}
+
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent||'')||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+}
+
+function saveBlob(blob,name){
+  try{
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=name;a.rel='noopener';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+    toast('файл сохранён: '+name);
+  }catch(e){
+    toast('не удалось сохранить файл');
+  }
+}
+
+function download(name,text,mime){
+  var blob=new Blob([text],{type:mime});
+  if(isIOS()){
+    try{
+      var file=new File([blob],name,{type:mime});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file]}).then(function(){
+          toast('файл готов: '+name);
+        }).catch(function(){
+          saveBlob(blob,name);
+        });
+        return;
+      }
+    }catch(e){}
+  }
+  saveBlob(blob,name);
+}
+
+/* ---------- события ---------- */
+
+$('#btnMenu').addEventListener('click',openMenu);
+$('#btnAddTask').addEventListener('click',openAddTask);
+$('#btnStop').addEventListener('click',stopTimer);
+$('#prevDay').addEventListener('click',function(){
+  var p=view.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  d.setDate(d.getDate()-1);view=dayKey(d.getTime());expanded=false;render();
+});
+$('#nextDay').addEventListener('click',function(){
+  var p=view.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+  d.setDate(d.getDate()+1);
+  var k=dayKey(d.getTime());
+  if(k>dayKey(Date.now()))return;
+  view=k;expanded=false;render();
+});
+$('#more').addEventListener('click',function(){expanded=!expanded;render();});
+$('#rangeTabs').addEventListener('click',function(ev){
+  var btn=ev.target.closest('button');
+  if(!btn)return;
+  setRange(btn.getAttribute('data-range'));
+});
+$('#fromDate').addEventListener('change',function(){
+  range.from=this.value;
+  if(range.to&&range.from>range.to){range.to=range.from;$('#toDate').value=range.to;}
+  renderChart();
+});
+$('#toDate').addEventListener('change',function(){
+  range.to=this.value;
+  if(range.from&&range.to<range.from){range.from=range.to;$('#fromDate').value=range.from;}
+  renderChart();
+});
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible')render();
+});
+
+$('#buildTag').textContent=' · сборка '+BUILD;
+(function(){
+  var ok=true;
+  try{
+    localStorage.setItem('__probe','1');
+    ok=localStorage.getItem('__probe')==='1';
+    localStorage.removeItem('__probe');
+  }catch(e){ok=false;}
+  if(!ok)$('#warn').hidden=false;
+  try{
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+    if(navigator.storage&&navigator.storage.persisted){
+      navigator.storage.persisted().then(function(p){storeState=p?'постоянное':'обычное';});
+    }
+  }catch(e){}
+})();
+render();
+setInterval(function(){
+  if(!S.running)return;
+  $('#runTime').textContent=timerText(Date.now()-S.running.ts);
+},1000);
+
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(r){
+      r.update();
+    }).catch(function(){});
+  });
+}
+})();
+</script>
+</body>
+</html>
