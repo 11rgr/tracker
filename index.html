@@ -54,7 +54,12 @@ header{padding:10px 16px 6px}
 .rtime{font-variant-numeric:tabular-nums;font-size:15px;opacity:.9}
 .stop{background:rgba(255,255,255,.18);padding:7px 12px;border-radius:10px;font-size:14px;font-weight:600}
 main{padding:12px 16px calc(28px + env(safe-area-inset-bottom))}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:start}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.gbox{grid-column:span 2}
+.gbox.half{grid-column:span 1}
+.gcards{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.gbox.half .gcards{grid-template-columns:1fr}
+@media (max-width:339px){.cols{grid-template-columns:1fr}.gbox,.gbox.half{grid-column:auto}.gcards,.gbox.half .gcards{grid-template-columns:1fr}}
 .gbox{
   background:#fff;border:1px solid var(--cb,#e6e2d9);border-radius:16px;padding:9px;
   display:flex;flex-direction:column;gap:8px;min-width:0;
@@ -63,7 +68,6 @@ main{padding:12px 16px calc(28px + env(safe-area-inset-bottom))}
 .ghead span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ghead i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
 .ghead2{font-size:12px;font-weight:500;color:#7d796f;padding:10px 2px 2px}
-.gcards{display:flex;flex-direction:column;gap:6px}
 .card{
   background:var(--bg);border:0;border-radius:12px;padding:9px;
   display:flex;flex-direction:column;
@@ -192,7 +196,7 @@ select{
 <main>
   <div class="block">
     <div class="blockhead"><span class="section-title">Задачи</span></div>
-    <div class="grid" id="grid"></div>
+    <div class="cols" id="cols"></div>
     <button class="addtask" id="btnAddTask">+ задача</button>
   </div>
   <div class="block">
@@ -229,27 +233,27 @@ select{
 'use strict';
 
 var KEY='tracker.v1';
-var BUILD='v15';
+var BUILD='v19';
 var PALETTE=['#2f6f57','#8a5a2b','#3d5a80','#7a4b73','#5c6b3a','#7d5a50','#4a6b6b'];
 
 var DEFAULTS={
   cats:[
-    {id:'c1',name:'Суды и процесс'},
-    {id:'c2',name:'Договоры'},
-    {id:'c3',name:'Правовой анализ'},
-    {id:'c4',name:'Клиенты и переписка'},
-    {id:'c5',name:'Административное'},
-    {id:'c6',name:'Обучение и Harness'}
+    {id:'c1',name:'Административное'},
+    {id:'c2',name:'Клиенты и переписка'},
+    {id:'c3',name:'Договоры'},
+    {id:'c4',name:'Обучение и развитие'},
+    {id:'c5',name:'Правовой анализ'}
   ],
   tasks:[
-    {id:'t1',name:'Разбор судебной практики',cat:'c3'},
-    {id:'t2',name:'Процессуальный документ',cat:'c1'},
-    {id:'t3',name:'Правка договора',cat:'c2'},
-    {id:'t4',name:'Консультация',cat:'c4'},
-    {id:'t5',name:'Переписка по делу',cat:'c4'},
-    {id:'t6',name:'Проверка норм и ссылок',cat:'c3'},
-    {id:'t7',name:'Разбор входящих',cat:'c5'},
-    {id:'t8',name:'Настройка Harness',cat:'c6'}
+    {id:'t1',name:'Разбор входящих',cat:'c1'},
+    {id:'t2',name:'Совещания с юристами',cat:'c1'},
+    {id:'t3',name:'Делегирование и постановка задач',cat:'c1'},
+    {id:'t4',name:'Контроль результатов задач',cat:'c1'},
+    {id:'t5',name:'Переписка с внешними',cat:'c2'},
+    {id:'t6',name:'Совещания с внешними',cat:'c2'},
+    {id:'t7',name:'Согласование договоров/презентаций и тп',cat:'c3'},
+    {id:'t8',name:'Глосса и так далее',cat:'c4'},
+    {id:'t9',name:'Анализ судебной практики',cat:'c5'}
   ],
   entries:[],
   running:null,
@@ -345,37 +349,44 @@ function groupsOfTasks(){
   return out;
 }
 
+function boxFor(gr){
+  var col=gr.cat?colorOf(gr.cat.id):'#b8b3a7';
+  var box=document.createElement('section');
+  box.className='gbox';
+  box.style.setProperty('--c',col);
+  box.style.setProperty('--cb',tint(col,0.4));
+  var head=document.createElement('div');
+  head.className='ghead';
+  head.innerHTML='<i style="background:'+col+'"></i><span>'+esc(gr.cat?gr.cat.name:'Без категории')+'</span>';
+  box.appendChild(head);
+  var list=document.createElement('div');
+  list.className='gcards';
+  gr.tasks.forEach(function(t){
+    var card=document.createElement('div');
+    card.className='card'+(S.running&&S.running.task===t.id?' on':'');
+    card.innerHTML='<div class="cname">'+esc(t.name)+'</div>'+
+      '<div class="chips"><button class="chip" data-add="5">+5</button><button class="chip" data-add="10">+10</button></div>';
+    card.addEventListener('click',function(ev){
+      var chip=ev.target.closest('.chip');
+      if(chip){quickAdd(t,+chip.getAttribute('data-add'));return;}
+      tapTask(t);
+    });
+    list.appendChild(card);
+  });
+  box.appendChild(list);
+  return box;
+}
+
 function renderTasks(){
-  var g=$('#grid');g.innerHTML='';
+  var g=$('#cols');
+  g.innerHTML='';
   if(!S.tasks.length){
     g.innerHTML='<div class="empty" style="grid-column:1/-1">Задач пока нет. Добавь первую.</div>';
     return;
   }
   groupsOfTasks().forEach(function(gr){
-    var col=gr.cat?colorOf(gr.cat.id):'#b8b3a7';
-    var box=document.createElement('section');
-    box.className='gbox';
-    box.style.setProperty('--c',col);
-    box.style.setProperty('--cb',tint(col,0.4));
-    var head=document.createElement('div');
-    head.className='ghead';
-    head.innerHTML='<i style="background:'+col+'"></i><span>'+esc(gr.cat?gr.cat.name:'Без категории')+'</span>';
-    box.appendChild(head);
-    var list=document.createElement('div');
-    list.className='gcards';
-    gr.tasks.forEach(function(t){
-      var card=document.createElement('div');
-      card.className='card'+(S.running&&S.running.task===t.id?' on':'');
-      card.innerHTML='<div class="cname">'+esc(t.name)+'</div>'+
-        '<div class="chips"><button class="chip" data-add="5">+5</button><button class="chip" data-add="10">+10</button></div>';
-      card.addEventListener('click',function(ev){
-        var chip=ev.target.closest('.chip');
-        if(chip){quickAdd(t,+chip.getAttribute('data-add'));return;}
-        tapTask(t);
-      });
-      list.appendChild(card);
-    });
-    box.appendChild(list);
+    var box=boxFor(gr);
+    if(gr.tasks.length===1)box.classList.add('half');
     g.appendChild(box);
   });
 }
